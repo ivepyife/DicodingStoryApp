@@ -74,6 +74,19 @@ class StoryRepository private constructor(
         }
     }
 
+    suspend fun getStoryWithLocation(): Result<ListStoryResponse> {
+        return try {
+            val response = apiService.getAllStory(location = 1)
+            if (!response.error!!) {
+                Result.Success(response)
+            } else {
+                Result.Error(response.message ?: "Unknown error occurred")
+            }
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "An error occurred")
+        }
+    }
+
     companion object {
         @Volatile
         private var instance: StoryRepository? = null

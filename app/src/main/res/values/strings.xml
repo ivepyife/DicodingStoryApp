@@ -47,4 +47,15 @@
     <string name="account_cretaed_message">The account with %1$s has been created. Let’s log in and upload some stories.</string>
     <string name="no_image_selected">No image selected</string>
     <string name="an_error_occurred">An error occurred</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="Maps">Maps</string>
+    <string name="normal_type">Normal</string>
+    <string name="satellite_type">Satellite</string>
+    <string name="terrain_type">Terrain</string>
+    <string name="hybrid_type">Hybrid</string>
+    <string name="share_location">share location</string>
+    <string name="location_permission_denied">Location permission denied</string>
+    <string name="location_added">Location added successfully</string>
+    <string name="location_not_found">Could not retrieve location</string>
+    <string name="location_error">Error getting location</string>
 </resources>

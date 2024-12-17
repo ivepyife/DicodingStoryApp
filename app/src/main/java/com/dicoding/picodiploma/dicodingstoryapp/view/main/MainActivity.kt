@@ -15,6 +15,7 @@ import com.dicoding.picodiploma.dicodingstoryapp.data.source.Result
 import com.dicoding.picodiploma.dicodingstoryapp.databinding.ActivityMainBinding
 import com.dicoding.picodiploma.dicodingstoryapp.view.adapter.StoryAdapter
 import com.dicoding.picodiploma.dicodingstoryapp.view.addstory.AddStoryActivity
+import com.dicoding.picodiploma.dicodingstoryapp.view.maps.MapsActivity
 import com.dicoding.picodiploma.dicodingstoryapp.view.viewmodel.MainViewModel
 import com.dicoding.picodiploma.dicodingstoryapp.view.viewmodel.ViewModelFactory
 import com.dicoding.picodiploma.dicodingstoryapp.view.welcome.WelcomeActivity
@@ -128,7 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_logout, menu)
+        menuInflater.inflate(R.menu.menu_appbar, menu)
         return true
     }
 
@@ -136,6 +137,11 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.btn_logout -> {
                 showLogoutConfirmationDialog()
+                true
+            }
+            R.id.btn_maps -> {
+                val intent = Intent(this, MapsActivity::class.java)
+                startActivity(intent)
                 true
             }
             else -> super.onOptionsItemSelected(item)

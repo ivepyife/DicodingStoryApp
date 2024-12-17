@@ -13,6 +13,7 @@ import com.dicoding.picodiploma.dicodingstoryapp.utils.reduceFileImage
 import com.dicoding.picodiploma.dicodingstoryapp.utils.uriToFile
 import kotlinx.coroutines.launch
 import com.dicoding.picodiploma.dicodingstoryapp.data.source.Result
+import android.location.Location
 
 class AddStoryViewModel(private val repository: StoryRepository) : ViewModel() {
     private val _currentImgUri = MutableLiveData<Uri?>()
@@ -24,16 +25,31 @@ class AddStoryViewModel(private val repository: StoryRepository) : ViewModel() {
     private val _uploadResult = MutableLiveData<Result<AddStoryResponse>>()
     val uploadResult: LiveData<Result<AddStoryResponse>> = _uploadResult
 
+    private val _currentLocation = MutableLiveData<Location?>()
+    val currentLocation: LiveData<Location?> = _currentLocation
+
     fun setCurrentImage(uri: Uri?) {
         _currentImgUri.value = uri
     }
 
-    fun uploadImage(context: Context, description: String, lat: Double? = null, lon: Double? = null) {
+    fun setCurrentLocation(location: Location?) {
+        _currentLocation.value = location
+    }
+
+    fun uploadImage(
+        context: Context,
+        description: String,
+        includeLocation: Boolean = false
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 _currentImgUri.value?.let { uri ->
                     val imageFile = uriToFile(uri, context).reduceFileImage()
+
+                    val lat = if (includeLocation) _currentLocation.value?.latitude else null
+                    val lon = if (includeLocation) _currentLocation.value?.longitude else null
+
                     val result = repository.addStory(description, imageFile, lat, lon)
                     _uploadResult.value = result
                 } ?: run {
