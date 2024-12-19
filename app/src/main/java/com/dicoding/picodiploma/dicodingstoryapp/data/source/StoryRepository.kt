@@ -1,5 +1,12 @@
 package com.dicoding.picodiploma.dicodingstoryapp.data.source
 
+import androidx.lifecycle.LiveData
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.liveData
+import com.dicoding.picodiploma.dicodingstoryapp.data.local.entity.StoryEntity
+import com.dicoding.picodiploma.dicodingstoryapp.data.local.room.StoryDatabase
 import com.dicoding.picodiploma.dicodingstoryapp.data.remote.response.AddStoryResponse
 import com.dicoding.picodiploma.dicodingstoryapp.data.remote.response.DetailStoryResponse
 import com.dicoding.picodiploma.dicodingstoryapp.data.remote.response.ListStoryResponse
@@ -12,8 +19,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.File
 
+@OptIn(androidx.paging.ExperimentalPagingApi::class)
 class StoryRepository private constructor(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val storyDatabase: StoryDatabase
 ) {
     suspend fun getStory(): Result<ListStoryResponse> {
         return try {
@@ -86,15 +95,28 @@ class StoryRepository private constructor(
             Result.Error(e.message ?: "An error occurred")
         }
     }
+    fun getStoryPaged(): LiveData<PagingData<StoryEntity>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false
+            ),
+            remoteMediator = StoryRemoteMediator(storyDatabase, apiService),
+            pagingSourceFactory = {
+                storyDatabase.storyDao().getAllStory()
+            }
+        ).liveData
+    }
 
     companion object {
         @Volatile
         private var instance: StoryRepository? = null
         fun getInstance(
-            apiService: ApiService
+            apiService: ApiService,
+            storyDatabase: StoryDatabase
         ): StoryRepository =
             instance ?: synchronized(this) {
-                instance ?: StoryRepository(apiService)
+                instance ?: StoryRepository(apiService, storyDatabase)
             }.also { instance = it }
     }
 }

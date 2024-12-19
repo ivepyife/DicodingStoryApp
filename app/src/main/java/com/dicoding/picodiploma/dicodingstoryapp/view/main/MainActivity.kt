@@ -9,10 +9,12 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dicoding.picodiploma.dicodingstoryapp.R
-import com.dicoding.picodiploma.dicodingstoryapp.data.source.Result
 import com.dicoding.picodiploma.dicodingstoryapp.databinding.ActivityMainBinding
+import com.dicoding.picodiploma.dicodingstoryapp.view.adapter.LoadingStateAdapter
 import com.dicoding.picodiploma.dicodingstoryapp.view.adapter.StoryAdapter
 import com.dicoding.picodiploma.dicodingstoryapp.view.addstory.AddStoryActivity
 import com.dicoding.picodiploma.dicodingstoryapp.view.maps.MapsActivity
@@ -30,9 +32,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        setupViewModel()
         setupRecyclerView()
+        setupViewModel()
         setupSwipeRefresh()
         setupAction()
     }
@@ -41,32 +44,18 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            resetUIState()
-            viewModel.getStory()
+            adapter.refresh()
         }
     }
 
     private fun setupRecyclerView() {
         adapter = StoryAdapter()
-        binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = this@MainActivity.adapter
-        }
-    }
-
-    private fun setupSwipeRefresh() {
-        binding.swipeRefresh.setOnRefreshListener {
-            resetUIState()
-            viewModel.getStory()
-        }
-    }
-
-    private fun resetUIState() {
-        adapter.submitList(emptyList())
-
-        showLoading(true)
-        showError(false)
-        showEmptyState(false)
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.adapter = adapter.withLoadStateFooter(
+            footer = LoadingStateAdapter {
+                adapter.retry()
+            }
+        )
     }
 
     private fun setupViewModel() {
@@ -74,58 +63,59 @@ class MainActivity : AppCompatActivity() {
             if (!user.isLogin) {
                 startActivity(Intent(this, WelcomeActivity::class.java))
                 finish()
-            } else{
-                setContentView(binding.root)
-                viewModel.updateWidget()
-            }
-        }
-
-        viewModel.story.observe(this) { result ->
-            binding.swipeRefresh.isRefreshing = false
-
-            when (result) {
-                is Result.Loading -> {
-                    showLoading(true)
-                    showError(false)
+            } else {
+                viewModel.story.observe(this) { pagingData ->
+                    adapter.submitData(lifecycle, pagingData)
                 }
-                is Result.Success -> {
-                    showLoading(false)
-                    showError(false)
-                    val stories = result.data.listStory
-                    if (stories.isNullOrEmpty()) {
-                        showEmptyState(true)
-                    } else {
-                        showEmptyState(false)
-                        adapter.submitList(stories)
+
+                // Observe loading states
+                adapter.addLoadStateListener { loadState ->
+                    binding.apply {
+                        progressBar.isVisible = loadState.source.refresh is LoadState.Loading
+                        swipeRefresh.isRefreshing = loadState.refresh is LoadState.Loading
+
+                        // Error state
+                        val errorState = loadState.source.refresh as? LoadState.Error
+                            ?: loadState.mediator?.refresh as? LoadState.Error
+                            ?: loadState.append as? LoadState.Error
+                            ?: loadState.prepend as? LoadState.Error
+
+                        errorState?.let { state ->
+                            showError(true, state.error.localizedMessage
+                                ?: getString(R.string.unknown_error))
+                        }
+
+                        // Empty state
+                        if (loadState.source.refresh is LoadState.NotLoading &&
+                            loadState.append.endOfPaginationReached &&
+                            adapter.itemCount < 1) {
+                            showEmptyState(true)
+                        } else {
+                            showEmptyState(false)
+                        }
                     }
-                }
-                is Result.Error -> {
-                    showLoading(false)
-                    showError(true, result.error)
                 }
             }
         }
     }
 
-    private fun showLoading(isLoading: Boolean) {
-        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.setOnRefreshListener {
+            adapter.refresh()
+        }
     }
 
     private fun showError(isError: Boolean, message: String = "") {
         binding.errorLayout.visibility = if (isError) View.VISIBLE else View.GONE
         binding.tvError.text = message
         binding.btnRetry.setOnClickListener {
-            viewModel.getStory()
+            adapter.retry()
         }
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
-        if (isEmpty) {
-            binding.tvError.text = getString(R.string.no_story_available)
-            binding.errorLayout.visibility = View.VISIBLE
-        } else {
-            binding.errorLayout.visibility = View.GONE
-        }
+        binding.errorLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        binding.tvError.text = getString(R.string.no_story_available)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

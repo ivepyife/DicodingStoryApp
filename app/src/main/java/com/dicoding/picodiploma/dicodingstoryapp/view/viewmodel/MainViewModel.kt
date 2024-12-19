@@ -8,7 +8,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.dicoding.picodiploma.dicodingstoryapp.R
+import com.dicoding.picodiploma.dicodingstoryapp.data.local.entity.StoryEntity
 import com.dicoding.picodiploma.dicodingstoryapp.data.remote.response.ListStoryResponse
 import com.dicoding.picodiploma.dicodingstoryapp.data.source.Result
 import com.dicoding.picodiploma.dicodingstoryapp.data.source.StoryRepository
@@ -24,7 +27,7 @@ class MainViewModel(
 ) : ViewModel() {
 
     private val _story = MutableLiveData<Result<ListStoryResponse>>()
-    val story: LiveData<Result<ListStoryResponse>> = _story
+    val story: LiveData<PagingData<StoryEntity>> = storyRepository.getStoryPaged().cachedIn(viewModelScope)
 
     fun updateWidget() {
         val appWidgetManager = AppWidgetManager.getInstance(context)

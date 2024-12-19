@@ -1,6 +1,7 @@
 package com.dicoding.picodiploma.dicodingstoryapp.di
 
 import android.content.Context
+import com.dicoding.picodiploma.dicodingstoryapp.data.local.room.StoryDatabase
 import com.dicoding.picodiploma.dicodingstoryapp.data.source.StoryRepository
 import com.dicoding.picodiploma.dicodingstoryapp.data.source.UserRepository
 import com.dicoding.picodiploma.dicodingstoryapp.data.pref.UserPreference
@@ -17,6 +18,8 @@ object Injection {
     fun provideStoryRepository(context: Context): StoryRepository {
         val pref = UserPreference.getInstance(context.dataStore)
         val apiService = ApiConfig.getApiService(pref)
-        return StoryRepository.getInstance(apiService)
+        val storyDatabase = StoryDatabase.getInstance(context)
+        return StoryRepository.getInstance(apiService, storyDatabase)
     }
+
 }

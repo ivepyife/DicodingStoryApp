@@ -58,4 +58,5 @@
     <string name="location_added">Lokasi Berhasil Ditambahkan</string>
     <string name="location_not_found">Lokasi Tidak Ditemukan</string>
     <string name="location_error">Lokasi Error</string>
+    <string name="unknown_error">unknown error</string>
 </resources>
